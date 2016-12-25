@@ -31,6 +31,7 @@ MPFR library built for Windows using msys2/mingw64
 
 	```bash
 	cd /c/libs/gmp-* #or whichever version
+	
 	./configure --enable-shared --disable-static --prefix=/c/libs/x32
 	make clean #clean up, just to be sure
 	make > build.log #you can check out the compilation process
@@ -40,7 +41,9 @@ MPFR library built for Windows using msys2/mingw64
 
 	```bash
 	cd /c/libs/mpfr-*
-	./configure --enable-shared --disable-static --enable-thread-safe --with-gmp=/c/libs/x32 --prefix=/c/libs/x32
+	
+	./configure --enable-shared --disable-static --enable-thread-safe 
+		--with-gmp=/c/libs/x32 --prefix=/c/libs/x32
 	make clean
 	make > build.log
 	make check
@@ -69,17 +72,19 @@ MPFR library built for Windows using msys2/mingw64
 	The compiled libmpfr-4.dll is dependent on these **runtime** libraries:
 
 	* **libgmp-10.dll**
-	* **libgcc_s_seh-1.dll**
+	* **libgcc_s_dw2-1.dll** or **libgcc_s_seh-1.dll** (x32 or x64)
 	* **libwinpthread-1.dll**
+	
+	The compiled libgmp-10.dll depends on **libgcc** only in x32 version.
 
-	They have to be accessible for the consumer of your libmpfr-4.dll.
-	<br>This can be done by either placing them:
+	These dependencies have to be accessible at runtime, which can be done by either placing them:
 	* in your application's directory
 	* in the current working directory
 	* in the system directories
 	* in a directory specified by the PATH environment variable.
 
-	You can check all the runtime dependencies by `ldd /c/libs/x32/bin/libmpfr-4.dll`.
+	You can and should check all the runtime dependencies by `ldd /c/libs/x32/bin/libmpfr-4.dll`
+	<br>or by the [Dependency Walker](http://dependencywalker.com/) Windows tool.
 
 	More information can be found here:
 	<br>https://msdn.microsoft.com/en-us/library/7d83bc18.aspx
@@ -87,21 +92,25 @@ MPFR library built for Windows using msys2/mingw64
 
   2. **Static linking**
 
-	If you wish to modify libmpfr-4.dll to link libgcc (or libwinpthread) statically,
-	you can reuse a linking command from the build.log:
+	If you wish to modify libmpfr-4.dll or libgmp-10.dll to link libgcc or libwinpthread statically,
+	<br>you can use linking options `-static-libgcc` and `-Wl,Bstatic -lpthread` respectivelly.
+	
+	However, you can learn from [GMP Known Build Problems](https://gmplib.org/manual/Known-Build-Problems.html#Known-Build-Problems) page that libtool strips those options. To circumvent the problem they suggest appending them directly to the compiler variable. 
+	
+	```bash
+	./configure CC="gcc -static-libgcc"
+	```
+
+	For MPFR build you can reuse a linking command from the build.log:
 
 	```bash
 	cd /c/libs/mpfr-*
 	cmd=$(grep -o 'gcc -shared.*' build.log) #store the linking command
 	cmd+=" -static-libgcc"
+	cmd+=" -Wl,-Bstatic -lpthread" #for libwinpthread
 	(cd src && $cmd) # execute cmd from src directory
-	make check
 	make install
-	ldd /c/libs/x64/bin/libmpfr-4.dll #ligcc should not be present
 	```
-
-	Note that you can also link libwinpthread statically by modifying
-	<br>`cmd+=" -Wl,-Bstatic -lpthread"` before its execution.
     
 ## License information
 
@@ -110,7 +119,7 @@ MPFR library built for Windows using msys2/mingw64
 	<br>As a result libraries linked statically to libgcc do not have any license restrictions,
 	<br>provided they are elegible to the exception.
 
-  * **[mingw-w64](http://mingw-w64.org/doku.php/start)** GCC for Windows 64 & 32 bits states that it license is disclosed along with its sources and is permissive.
+  * **[mingw-w64](http://mingw-w64.org/doku.php/start)** *GCC for Windows 64 & 32 bits* states that it license is disclosed along with its sources and is permissive.
   	<br>This information is well hidden on their webpage in the [support](https://mingw-w64.org/doku.php/support) section.
 	<br>This also applies to **winpthread** library or libwinpthread-1.dll (not to confuse with POSIX Threads for Windows or _pthread-win32_).
 	<br>In binary distributions of msys2/mingw64 targeting [x86](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/6.2.0/threads-win32/) and [x64](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/6.2.0/threads-win32/seh/) you can find under `mingw32` or `mingw64` a file `licenses/mingw-w64/COPYING` that states:
