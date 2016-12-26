@@ -2,7 +2,21 @@
 
 MPFR library built for Windows using msys2/mingw64
 
+## Prebuilt packages
+
+The current prebuilt packages can be downloaded from [dist/mpfr-3.1.5_gmp-6.1.2](https://github.com/emphasis87/libmpfr-msys2-mingw64/tree/master/dist/mpfr-3.1.5_gmp-6.1.2).
+
+Note that **libgcc** is not shipped together with pacakges where **libgmp-10.dll** and **libmpfr-4.dll** have it as a runtime dependency. This is because I was so far unable to obtain sources from which were mingw32 and mingw64 toolchains built under msys2. For now you can perhaps use those available directly from the mingw64 project.
+
+For x32 Windows there is **libgcc_s_dw2-1.dll** [here](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/6.2.0/threads-win32/dwarf/i686-6.2.0-release-win32-dwarf-rt_v5-rev1.7z/download).
+<br>For x64 Windows there is **libgcc_s_seh-1.dll** [here](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/6.2.0/threads-win32/seh/x86_64-6.2.0-release-win32-seh-rt_v5-rev1.7z/download).
+
+
 ## How to build libmpfr-4.dll
+
+0. Example build script
+
+	If you already know what to do, here is an example [build/build.sh](https://github.com/emphasis87/libmpfr-msys2-mingw64/blob/master/build/build.sh) script. You can adapt it if you like.
 
 1. **Install [MSYS2](http://msys2.github.io/)** and [mingw-w64](https://mingw-w64.org/doku.php).
 
@@ -111,7 +125,7 @@ MPFR library built for Windows using msys2/mingw64
 	(cd src && $cmd) # execute cmd from src directory
 	make install
 	```
-    
+
 ## License information
 
   * **[GNU Compiler Collection (GCC)](https://gcc.gnu.org/)**, which libgcc is a part of, is distributed under [GNU GPL 3+](https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html)
