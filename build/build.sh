@@ -10,7 +10,9 @@ vlibs="${smpfr}_${sgmp}"
 pgmp="$sgmp.tar.lz"
 pmpfr="$smpfr.tar.xz"
 
-cc=$(gcc -v 2>&1 | grep -o -E "i686|x86" -m 1)
+libs="/c/libs"
+
+cc=$(gcc -v 2>&1 | grep -o -E "i686|x86_64" -m 1)
 
 if [ "$cc" == "i686" ]; then 
 	arch="x32"
@@ -31,8 +33,8 @@ function make_all {
 
 function make_setup {
 
-	mkdir -p /c/libs/src
-	cd /c/libs/src
+	mkdir -p "$libs/src"
+	cd "$libs/src"
 
 	if [ ! -f $pgmp ]; then wget "https://gmplib.org/download/gmp/$pgmp"; fi
 	if [ ! -f $pmpfr ]; then wget "http://www.mpfr.org/mpfr-current/$pmpfr"; fi
@@ -45,18 +47,15 @@ function make_setup {
 
 	name="runtime"
 	if [ "$static_libgcc" = false ]; then name+="_libgcc"; fi
-	if [ "$static_libwinpthread" = false ] && [ "$arch" == "x64" ]; then name+="_libwinpthread"; fi
+	if [ "$static_libwinpthread" = false ]; then name+="_libwinpthread"; fi
 	if [ "$name" == "runtime" ]; then name="standalone"; fi
-		
-	fi
 
-	src="/c/libs/src/${arch}_$name"
-	out="/c/libs/out/${arch}_$name"
-	dist="/c/libs/dist/$vlibs/${arch}_${vlibs}_$name"
-	log="/c/logs/${arch}_${vlibs}_$name"
+	src="$libs/src/${arch}_$name"
+	out="$libs/out/${arch}_$name"
+	dist="$libs/dist/$vlibs/${arch}_${vlibs}_$name"
 
 	rm -rf "$src"
-	mkdir -p "$src" "$log"
+	mkdir -p "$src"
 
 	cd /c/libs/src
 
@@ -76,31 +75,31 @@ function make_build {
 
 function make_build_gmp {
 
-	set +o xtrace
+    set +o xtrace
 
 	cc="gcc"
 	if [ "$static_libgcc" = true ]; then cc+=" -static-libgcc"; fi
 
 	set -o xtrace
 
-  cd "$src/$sgmp"
-  ./configure CC="$cc" --enable-shared --disable-static --prefix="$out" > "$log/$configure.log" \
+	cd "$src/$sgmp"
+	./configure CC="$cc" --enable-shared --disable-static --prefix="$out" \
 		&& make clean > /dev/null \
-		&& make > "$log/build.log" \
-		&& : make check > "$log/check.log" \
-		&& make install > "$log/install.log"
+		&& make > build.log \
+		&& make check \
+		&& make install
 
   set +o xtrace
 }
 
 function make_build_mpfr {
 
-  set -o xtrace
+	set -o xtrace
 
-  cd "$src/$smpfr"
-	./configure --enable-shared --disable-static --enable-thread-safe --prefix="$out" --with-gmp="$out" > "$log/configure.log" \
+	cd "$src/$smpfr"
+	./configure --enable-shared --disable-static --enable-thread-safe --prefix="$out" --with-gmp="$out" \
 		&& make clean > /dev/null \
-		&& make > "$log/build.log" \
+		&& make > build.log \
 		&& {
 			set +o xtrace
 
@@ -118,10 +117,10 @@ function make_build_mpfr {
 
 			set -o xtrace
 		} \
-		&& : make check > "$log/check.log" \
-		&& make install > "$log/install.log"
+		&& make check \
+		&& make install
 
-  set +o xtrace
+	set +o xtrace
 }
 
 function make_dist {
@@ -129,7 +128,7 @@ function make_dist {
 	rm -rf "$dist"
 	mkdir -p "$dist" "$dist/src/$sgmp" "$dist/src/$smpfr" "$dist/bin" "$dist/licenses"
 
-	cd /c/libs/src
+	cd "$libs/src"
 
 	tar --lzip -xf $pgmp -C "$dist/src"
 	tar -xJf $pmpfr -C "$dist/src"
@@ -141,7 +140,7 @@ function make_dist {
 if [ "$arch" == "x32" ]; then 
 	make_all $arch false false
 	make_all $arch true false
-	# make_all $arch true true # on x32 there is no dependency from libmpfr to libwinpthread
+	make_all $arch true true
 elif [ "$arch" == "x64" ]; then 
 	make_all $arch false false
 	make_all $arch true false
